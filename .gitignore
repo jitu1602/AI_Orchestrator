@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Secrets / local config
+.env
+
+# Playwright outputs
+test-results/
+playwright-report/
+playwright/.cache/
+
+# TypeScript build artifacts
+*.tsbuildinfo
+
+# OS / editor
+.DS_Store
+Thumbs.db
