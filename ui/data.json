@@ -1,0 +1,215 @@
+{
+  "runState": "COMPLETED",
+  "coreMessage": "Orchestration complete",
+  "generatedAt": "2026-09-27T18:17:13.191Z",
+  "metrics": {
+    "pipeline": [
+      {
+        "icon": "📄",
+        "val": 2,
+        "label": "Requirements",
+        "cls": "c-cyan"
+      },
+      {
+        "icon": "🧪",
+        "val": 6,
+        "label": "Test Cases",
+        "cls": "c-cyan"
+      },
+      {
+        "icon": "</>",
+        "val": 6,
+        "label": "Scripts",
+        "cls": "c-cyan"
+      },
+      {
+        "icon": "⇄",
+        "val": 0,
+        "label": "Duplicates",
+        "cls": "c-cyan"
+      }
+    ],
+    "execution": [
+      {
+        "icon": "▶",
+        "val": 6,
+        "label": "Executed",
+        "cls": "c-amber"
+      },
+      {
+        "icon": "✓",
+        "val": 6,
+        "label": "Passed",
+        "cls": "c-green"
+      },
+      {
+        "icon": "✕",
+        "val": 0,
+        "label": "Failed",
+        "cls": "c-green"
+      },
+      {
+        "icon": "%",
+        "val": "100%",
+        "label": "Pass Rate",
+        "cls": "c-green"
+      }
+    ],
+    "quality": [
+      {
+        "icon": "◎",
+        "val": "100%",
+        "label": "Req. Coverage",
+        "cls": "c-green"
+      },
+      {
+        "icon": "🐞",
+        "val": 0,
+        "label": "Defects Filed",
+        "cls": "c-green"
+      },
+      {
+        "icon": "❤",
+        "val": "0 / 0",
+        "label": "Healed / Flaky",
+        "cls": "c-amber"
+      }
+    ]
+  },
+  "agents": [
+    {
+      "id": "req",
+      "name": "Requirement\nAnalyzer",
+      "icon": "🔍",
+      "status": "2 requirements extracted",
+      "state": "done",
+      "angle": 270,
+      "r": 0.34
+    },
+    {
+      "id": "tcg",
+      "name": "Test Case\nGenerator",
+      "icon": "🧪",
+      "status": "6 test cases generated",
+      "state": "done",
+      "angle": 330,
+      "r": 0.4
+    },
+    {
+      "id": "auto",
+      "name": "Automation\nGenerator",
+      "icon": "</>",
+      "status": "6 scripts built",
+      "state": "done",
+      "angle": 30,
+      "r": 0.4
+    },
+    {
+      "id": "exec",
+      "name": "Execution\nAgent",
+      "icon": "▷",
+      "status": "6/6 passed",
+      "state": "done",
+      "angle": 90,
+      "r": 0.34
+    },
+    {
+      "id": "defect",
+      "name": "Defect\nDetector",
+      "icon": "🐞",
+      "status": "0 defects filed",
+      "state": "done",
+      "angle": 150,
+      "r": 0.4
+    },
+    {
+      "id": "report",
+      "name": "Reporting\nAgent",
+      "icon": "📋",
+      "status": "report delivered",
+      "state": "done",
+      "angle": 210,
+      "r": 0.4
+    }
+  ],
+  "console": [
+    {
+      "t": "tag",
+      "text": "[orchestrator] pipeline started"
+    },
+    {
+      "t": "ok",
+      "text": "✓ TC-004: Verify adding a product increments the cart badge count"
+    },
+    {
+      "t": "ok",
+      "text": "✓ TC-005: Verify an added product appears on the cart page"
+    },
+    {
+      "t": "ok",
+      "text": "✓ TC-006: Verify removing a product empties the cart"
+    },
+    {
+      "t": "ok",
+      "text": "✓ TC-001: Verify user logs in successfully with valid credentials"
+    },
+    {
+      "t": "ok",
+      "text": "✓ TC-002: Verify login fails with an invalid password"
+    },
+    {
+      "t": "ok",
+      "text": "✓ TC-003: Verify login fails when the username field is left empty"
+    },
+    {
+      "t": "ok",
+      "text": "→ execution: 6/6 passed · 100% pass rate"
+    },
+    {
+      "t": "tag",
+      "text": "[orchestrator] orchestration complete"
+    }
+  ],
+  "deepeval": {
+    "verdict": "PASS · 100%",
+    "bars": [
+      {
+        "label": "Overall Accuracy",
+        "val": 100,
+        "color": "var(--blue)"
+      },
+      {
+        "label": "Test Coverage",
+        "val": 100,
+        "color": "var(--cyan)"
+      },
+      {
+        "label": "Script Quality",
+        "val": 100,
+        "color": "var(--cyan)"
+      },
+      {
+        "label": "Bug Quality",
+        "val": 100,
+        "color": "var(--violet)"
+      }
+    ]
+  },
+  "trace": {
+    "rows": [
+      {
+        "req": "REQ-001",
+        "desc": "User login with valid credentials",
+        "cases": 2,
+        "align": "Covered ✓✓"
+      },
+      {
+        "req": "REQ-002",
+        "desc": "Shopping cart add / remove",
+        "cases": 3,
+        "align": "Covered"
+      }
+    ],
+    "foot": "2/2 requirements covered"
+  }
+}
