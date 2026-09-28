@@ -130,8 +130,11 @@ function renderAgents() {
           <span class="agent-detail">Details ›</span>
         </div>
       </div>`;
-    el.querySelector(".agent-detail").addEventListener("click", () =>
-      alert(`${a.name.replace(/\n/g, " ")}\nStatus: ${a.status}`));
+    el.querySelector(".agent-detail").addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      openDrawer(a);
+    });
+    el.addEventListener("click", () => openDrawer(a));
     agentsEl.appendChild(el);
   });
 
@@ -184,6 +187,102 @@ function wireControls() {
   input.addEventListener("keydown", e => { if (e.key === "Enter") doRun(); });
 }
 
+// ---------- AGENT DETAIL DRAWER ----------
+function sectionHtml(sec) {
+  switch (sec.kind) {
+    case "kv":
+      return `<div class="d-section">
+        <div class="d-section-title">${sec.title}</div>
+        <dl class="d-kv">${sec.items.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
+      </div>`;
+    case "list":
+      return `<div class="d-section">
+        <div class="d-section-title">${sec.title}</div>
+        <ul class="d-list">${sec.items.map(i => `<li>${i}</li>`).join("")}</ul>
+      </div>`;
+    case "note":
+      return `<div class="d-section"><div class="d-note">${sec.text}</div></div>`;
+    case "cases":
+      return `<div class="d-section">
+        <div class="d-section-title">${sec.title}</div>
+        ${sec.rows.map(r => `<div class="d-row">
+          <span class="d-row-id">${r.id}</span>
+          <span class="d-row-title">${r.title}</span>
+          <span class="d-badge tech">${(r.technique || "").replace(/_/g, " ")}</span>
+        </div>`).join("")}
+      </div>`;
+    case "results":
+      return `<div class="d-section">
+        <div class="d-section-title">${sec.title}</div>
+        ${sec.rows.map(r => `<div class="d-row">
+          <span class="d-row-id">${r.id}</span>
+          <span class="d-row-title">${r.title}</span>
+          <span class="d-row-meta">${r.duration}</span>
+          <span class="d-badge ${r.status === "passed" ? "pass" : "fail"}">${r.status}</span>
+        </div>`).join("")}
+      </div>`;
+    case "defects":
+      return `<div class="d-section">
+        <div class="d-section-title">${sec.title}</div>
+        ${sec.rows.map(r => `<div class="d-row">
+          <span class="d-badge fail">${r.severity}</span>
+          <span class="d-row-title">${r.title}${r.error ? `<br><span class="d-row-meta">${r.error}</span>` : ""}</span>
+        </div>`).join("")}
+      </div>`;
+    case "trace":
+      return `<div class="d-section">
+        <div class="d-section-title">${sec.title}</div>
+        ${sec.rows.map(r => `<div class="d-trace-row">
+          <span class="d-trace-req">${r.req}</span>
+          <span class="d-trace-cases">${r.cases}</span>
+          <span class="d-trace-align">${r.align}</span>
+        </div>`).join("")}
+      </div>`;
+    default:
+      return "";
+  }
+}
+
+function openDrawer(agent) {
+  const drawer = document.getElementById("drawer");
+  const scrim = document.getElementById("drawerScrim");
+  const name = agent.name.replace(/\n/g, " ");
+  document.getElementById("drawerIcon").textContent = agent.icon;
+  document.getElementById("drawerTitle").textContent = name;
+
+  const detail = agent.detail;
+  document.getElementById("drawerSub").textContent =
+    (detail && detail.subtitle) || agent.status || "";
+
+  const body = document.getElementById("drawerBody");
+  if (detail && detail.sections && detail.sections.length) {
+    body.innerHTML = detail.sections.map(sectionHtml).join("");
+  } else {
+    // fallback when running under file:// with mock data (no rich detail)
+    body.innerHTML = `<div class="d-note">Status: ${agent.status}<br><br>
+      Rich agent output loads when the dashboard is served over HTTP with a real
+      run (npm run ui:refresh &amp;&amp; npm run ui:serve).</div>`;
+  }
+
+  scrim.hidden = false;
+  drawer.hidden = false;
+  drawer.setAttribute("aria-hidden", "false");
+}
+
+function closeDrawer() {
+  document.getElementById("drawer").hidden = true;
+  document.getElementById("drawerScrim").hidden = true;
+  document.getElementById("drawer").setAttribute("aria-hidden", "true");
+}
+
+function wireDrawer() {
+  document.getElementById("drawerClose").addEventListener("click", closeDrawer);
+  document.getElementById("drawerScrim").addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeDrawer();
+  });
+}
+
 function renderAll() {
   renderMetrics();
   renderConsole();
@@ -210,5 +309,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadData();
   renderAll();
   wireControls();
+  wireDrawer();
 });
 window.addEventListener("resize", renderAgents);

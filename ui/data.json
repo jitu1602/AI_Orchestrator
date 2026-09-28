@@ -1,7 +1,7 @@
 {
   "runState": "COMPLETED",
   "coreMessage": "Orchestration complete",
-  "generatedAt": "2026-09-27T18:17:13.191Z",
+  "generatedAt": "2026-09-28T02:10:02.036Z",
   "metrics": {
     "pipeline": [
       {
@@ -84,7 +84,64 @@
       "status": "2 requirements extracted",
       "state": "done",
       "angle": 270,
-      "r": 0.34
+      "r": 0.34,
+      "detail": {
+        "subtitle": "2 requirements extracted · explicit + inferred",
+        "sections": [
+          {
+            "kind": "kv",
+            "title": "REQ-001 · Authentication",
+            "items": [
+              [
+                "Title",
+                "User login with valid credentials"
+              ],
+              [
+                "Type",
+                "functional"
+              ],
+              [
+                "Priority",
+                "P1"
+              ],
+              [
+                "Derivation",
+                "explicit"
+              ],
+              [
+                "Acceptance",
+                "AC-001-1 valid creds → inventory; AC-001-2 invalid → error"
+              ]
+            ]
+          },
+          {
+            "kind": "kv",
+            "title": "REQ-002 · Cart management",
+            "items": [
+              [
+                "Title",
+                "Add / remove products in cart"
+              ],
+              [
+                "Type",
+                "functional"
+              ],
+              [
+                "Priority",
+                "P1"
+              ],
+              [
+                "Derivation",
+                "inferred"
+              ],
+              [
+                "Acceptance",
+                "AC-002-1 add increments badge; AC-002-2 remove empties cart"
+              ]
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "tcg",
@@ -93,7 +150,48 @@
       "status": "6 test cases generated",
       "state": "done",
       "angle": 330,
-      "r": 0.4
+      "r": 0.4,
+      "detail": {
+        "subtitle": "6 test cases · EP · BVA · decision table",
+        "sections": [
+          {
+            "kind": "cases",
+            "title": "Generated test cases",
+            "rows": [
+              {
+                "id": "TC-004",
+                "title": "TC-004: Verify adding a product increments the cart badge count",
+                "technique": "positive"
+              },
+              {
+                "id": "TC-005",
+                "title": "TC-005: Verify an added product appears on the cart page",
+                "technique": "positive"
+              },
+              {
+                "id": "TC-006",
+                "title": "TC-006: Verify removing a product empties the cart",
+                "technique": "positive"
+              },
+              {
+                "id": "TC-001",
+                "title": "TC-001: Verify user logs in successfully with valid credentials",
+                "technique": "positive"
+              },
+              {
+                "id": "TC-002",
+                "title": "TC-002: Verify login fails with an invalid password",
+                "technique": "error_guessing"
+              },
+              {
+                "id": "TC-003",
+                "title": "TC-003: Verify login fails when the username field is left empty",
+                "technique": "error_guessing"
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "auto",
@@ -102,7 +200,33 @@
       "status": "6 scripts built",
       "state": "done",
       "angle": 30,
-      "r": 0.4
+      "r": 0.4,
+      "detail": {
+        "subtitle": "6 scripts · Page Object Model · Playwright TS",
+        "sections": [
+          {
+            "kind": "list",
+            "title": "Page objects",
+            "items": [
+              "LoginPage.ts",
+              "InventoryPage.ts",
+              "CartPage.ts"
+            ]
+          },
+          {
+            "kind": "list",
+            "title": "Spec files",
+            "items": [
+              "login.spec.ts",
+              "cart.spec.ts"
+            ]
+          },
+          {
+            "kind": "note",
+            "text": "Semantic locators (role → label → placeholder). Env-driven config. tsc --noEmit clean."
+          }
+        ]
+      }
     },
     {
       "id": "exec",
@@ -111,7 +235,66 @@
       "status": "6/6 passed",
       "state": "done",
       "angle": 90,
-      "r": 0.34
+      "r": 0.34,
+      "detail": {
+        "subtitle": "6/6 passed · 100% · 0 flaky",
+        "sections": [
+          {
+            "kind": "results",
+            "title": "Execution results",
+            "rows": [
+              {
+                "id": "TC-004",
+                "title": "TC-004: Verify adding a product increments the cart badge count",
+                "status": "passed",
+                "duration": "3.0s",
+                "file": "cart.spec.ts",
+                "error": null
+              },
+              {
+                "id": "TC-005",
+                "title": "TC-005: Verify an added product appears on the cart page",
+                "status": "passed",
+                "duration": "3.1s",
+                "file": "cart.spec.ts",
+                "error": null
+              },
+              {
+                "id": "TC-006",
+                "title": "TC-006: Verify removing a product empties the cart",
+                "status": "passed",
+                "duration": "3.0s",
+                "file": "cart.spec.ts",
+                "error": null
+              },
+              {
+                "id": "TC-001",
+                "title": "TC-001: Verify user logs in successfully with valid credentials",
+                "status": "passed",
+                "duration": "2.9s",
+                "file": "login.spec.ts",
+                "error": null
+              },
+              {
+                "id": "TC-002",
+                "title": "TC-002: Verify login fails with an invalid password",
+                "status": "passed",
+                "duration": "2.9s",
+                "file": "login.spec.ts",
+                "error": null
+              },
+              {
+                "id": "TC-003",
+                "title": "TC-003: Verify login fails when the username field is left empty",
+                "status": "passed",
+                "duration": "2.9s",
+                "file": "login.spec.ts",
+                "error": null
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "defect",
@@ -120,7 +303,16 @@
       "status": "0 defects filed",
       "state": "done",
       "angle": 150,
-      "r": 0.4
+      "r": 0.4,
+      "detail": {
+        "subtitle": "No real defects · flaky check clean",
+        "sections": [
+          {
+            "kind": "note",
+            "text": "All tests passed. No failures to triage, no flaky signals detected."
+          }
+        ]
+      }
     },
     {
       "id": "report",
@@ -129,7 +321,58 @@
       "status": "report delivered",
       "state": "done",
       "angle": 210,
-      "r": 0.4
+      "r": 0.4,
+      "detail": {
+        "subtitle": "Final QA report · traceability aligned",
+        "sections": [
+          {
+            "kind": "kv",
+            "title": "Summary",
+            "items": [
+              [
+                "Test cases",
+                "6"
+              ],
+              [
+                "Executed",
+                "6"
+              ],
+              [
+                "Passed",
+                "6"
+              ],
+              [
+                "Failed",
+                "0"
+              ],
+              [
+                "Pass rate",
+                "100%"
+              ],
+              [
+                "Requirement coverage",
+                "100%"
+              ]
+            ]
+          },
+          {
+            "kind": "trace",
+            "title": "Traceability",
+            "rows": [
+              {
+                "req": "REQ-001",
+                "cases": 2,
+                "align": "Covered"
+              },
+              {
+                "req": "REQ-002",
+                "cases": 3,
+                "align": "Covered"
+              }
+            ]
+          }
+        ]
+      }
     }
   ],
   "console": [
