@@ -29,8 +29,13 @@
       <span class="meta-chip">www.saucedemo.com</span>
       <span class="meta-chip">gpt-oss-120b</span>
       <button class="ghost-btn">📊 Analytics</button>
+      <button class="try-btn" id="tryBtn">✨ Try it Free</button>
       <button class="icon-btn">?</button>
       <button class="icon-btn">⚙</button>
+      <div class="user-badge" id="userBadge" title="Signed in">
+        <span class="user-avatar" id="userAvatar">JH</span>
+        <span class="user-name" id="userName">Jitendra Harnoor</span>
+      </div>
       <button class="icon-btn">⎋</button>
     </div>
   </header>
@@ -94,6 +99,108 @@
     </aside>
   </main>
 
+  <!-- ============ ONBOARDING WIZARD ============ -->
+  <div class="overlay" id="overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="wizTitle">
+      <button class="modal-close" id="wizClose" aria-label="Close">✕</button>
+
+      <!-- step progress -->
+      <div class="wiz-steps" id="wizSteps">
+        <span class="wiz-step" data-step="1"></span>
+        <span class="wiz-step" data-step="2"></span>
+        <span class="wiz-step" data-step="3"></span>
+        <span class="wiz-step" data-step="4"></span>
+      </div>
+
+      <!-- STEP 1: intro -->
+      <section class="wiz-panel" data-panel="1">
+        <div class="wiz-icon">🚀</div>
+        <h2 class="wiz-title" id="wizTitle">Welcome to QA Orchestrator</h2>
+        <p class="wiz-text">
+          Spin up an autonomous, multi-agent QA pipeline in minutes. Describe what to
+          test and the orchestrator drives requirement analysis, test-case design,
+          Playwright automation, execution, defect triage, and reporting — end to end.
+        </p>
+        <ul class="wiz-list">
+          <li>✓ 6 specialized agents, one orchestrator core</li>
+          <li>✓ Traceable coverage from requirement to test</li>
+          <li>✓ Bring your own LLM key — no data leaves your control</li>
+        </ul>
+        <div class="wiz-actions">
+          <button class="wiz-next" data-next>Next →</button>
+        </div>
+      </section>
+
+      <!-- STEP 2: create account -->
+      <section class="wiz-panel" data-panel="2" hidden>
+        <div class="wiz-icon">👤</div>
+        <h2 class="wiz-title">Create your account</h2>
+        <p class="wiz-text">Pick a username and password to secure your workspace.</p>
+        <label class="wiz-field">
+          <span>Username</span>
+          <input type="text" id="acctUser" placeholder="e.g. jitendra.harnoor" autocomplete="off" />
+        </label>
+        <label class="wiz-field">
+          <span>Password</span>
+          <input type="password" id="acctPass" placeholder="At least 8 characters" autocomplete="new-password" />
+        </label>
+        <div class="wiz-error" id="acctError" hidden></div>
+        <div class="wiz-actions">
+          <button class="wiz-back" data-back>← Back</button>
+          <button class="wiz-next" id="acctSubmit">Create account →</button>
+        </div>
+      </section>
+
+      <!-- STEP 3: 6-digit token -->
+      <section class="wiz-panel" data-panel="3" hidden>
+        <div class="wiz-icon">🔐</div>
+        <h2 class="wiz-title">Your access token</h2>
+        <p class="wiz-text">
+          Save this 6-digit token — you'll use it to authenticate the CLI and API.
+        </p>
+        <div class="token-box" id="tokenBox">------</div>
+        <button class="wiz-ghost" id="copyToken">⧉ Copy token</button>
+        <div class="wiz-hint" id="copyHint" hidden>Copied to clipboard</div>
+        <div class="wiz-actions">
+          <button class="wiz-back" data-back>← Back</button>
+          <button class="wiz-next" data-next>Next →</button>
+        </div>
+      </section>
+
+      <!-- STEP 4: API key -->
+      <section class="wiz-panel" data-panel="4" hidden>
+        <div class="wiz-icon">🔌</div>
+        <h2 class="wiz-title">Connect your LLM</h2>
+        <p class="wiz-text">
+          QA Orchestrator runs on Groq. Paste a Groq API key to connect. Don't have one?
+          <a href="https://console.groq.com/keys" target="_blank" rel="noopener">Generate a Groq API key →</a>
+        </p>
+        <label class="wiz-field">
+          <span>Groq API key</span>
+          <input type="password" id="apiKey" placeholder="gsk_..." autocomplete="off" />
+        </label>
+        <div class="wiz-error" id="apiError" hidden></div>
+        <div class="wiz-actions">
+          <button class="wiz-back" data-back>← Back</button>
+          <button class="wiz-next" id="apiSubmit">Connect &amp; finish</button>
+        </div>
+      </section>
+
+      <!-- DONE -->
+      <section class="wiz-panel" data-panel="done" hidden>
+        <div class="wiz-icon">✅</div>
+        <h2 class="wiz-title">You're all set</h2>
+        <p class="wiz-text">
+          Account created, token issued, and Groq connected. Mission Control is ready.
+        </p>
+        <div class="wiz-actions">
+          <button class="wiz-next" id="wizFinish">Enter Mission Control</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
   <script src="app.js"></script>
+  <script src="onboarding.js"></script>
 </body>
 </html>
