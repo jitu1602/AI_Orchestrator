@@ -8,6 +8,7 @@
     "test:report": "playwright test --reporter=list,json",
     "ui:data": "node ui/build-data.js",
     "ui:refresh": "playwright test && node ui/build-data.js",
+    "ui:serve": "node ui/serve.js",
     "test:headed": "playwright test --headed",
     "typecheck": "tsc --noEmit",
     "install:browsers": "playwright install"
