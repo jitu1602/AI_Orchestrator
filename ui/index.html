@@ -132,33 +132,30 @@
       <section class="wiz-panel" data-panel="1">
         <div class="wiz-icon">🚀</div>
         <h2 class="wiz-title" id="wizTitle">Welcome to QA Orchestrator</h2>
-        <p class="wiz-text">
-          Spin up an autonomous, multi-agent QA pipeline in minutes. Describe what to
-          test and the orchestrator drives requirement analysis, test-case design,
-          Playwright automation, execution, defect triage, and reporting — end to end.
-        </p>
+        <p class="wiz-text">A quick look at how the pipeline works, before you sign in.</p>
         <ul class="wiz-list">
-          <li>✓ 6 specialized agents, one orchestrator core</li>
-          <li>✓ Traceable coverage from requirement to test</li>
-          <li>✓ Bring your own LLM key — no data leaves your control</li>
+          <li>✓ Structured, testable requirements pulled from your story or PRD</li>
+          <li>✓ Drafts test cases that cover them, then generates Playwright scripts</li>
+          <li>✓ Auto-generated traceability matrix and flaky-test detection</li>
+          <li>✓ Bring your own model — a target URL and your own free LLM API key</li>
         </ul>
         <div class="wiz-actions">
           <button class="wiz-next" data-next>Next →</button>
         </div>
       </section>
 
-      <!-- STEP 2: create account -->
+      <!-- STEP 2: account (email + password) -->
       <section class="wiz-panel" data-panel="2" hidden>
         <div class="wiz-icon">👤</div>
-        <h2 class="wiz-title">Create your account</h2>
-        <p class="wiz-text">Pick a username and password to secure your workspace.</p>
+        <h2 class="wiz-title">Confirm your account</h2>
+        <p class="wiz-text">Sign in to your account. Runs and API keys are private to each account.</p>
         <label class="wiz-field">
-          <span>Username</span>
-          <input type="text" id="acctUser" placeholder="e.g. jitendra.harnoor" autocomplete="off" />
+          <span>Email</span>
+          <input type="email" id="acctEmail" placeholder="you@example.com" autocomplete="off" />
         </label>
         <label class="wiz-field">
           <span>Password</span>
-          <input type="password" id="acctPass" placeholder="At least 8 characters" autocomplete="new-password" />
+          <input type="password" id="acctPass" placeholder="Your password" autocomplete="new-password" />
         </label>
         <div class="wiz-error" id="acctError" hidden></div>
         <div class="wiz-actions">
@@ -167,34 +164,44 @@
         </div>
       </section>
 
-      <!-- STEP 3: 6-digit token -->
+      <!-- STEP 3: verification code / token -->
       <section class="wiz-panel" data-panel="3" hidden>
         <div class="wiz-icon">🔐</div>
-        <h2 class="wiz-title">Your access token</h2>
-        <p class="wiz-text">
-          Save this 6-digit token — you'll use it to authenticate the CLI and API.
-        </p>
+        <h2 class="wiz-title">Verify your account</h2>
+        <p class="wiz-text">A new code was generated. Copy it, then paste it below to confirm.</p>
         <div class="token-box" id="tokenBox">------</div>
-        <button class="wiz-ghost" id="copyToken">⧉ Copy token</button>
-        <div class="wiz-hint" id="copyHint" hidden>Copied to clipboard</div>
+        <button class="wiz-ghost" id="copyToken">⧉ Copy code</button>
+        <span class="wiz-hint" id="copyHint" hidden>Copied to clipboard</span>
+        <label class="wiz-field" style="margin-top:14px;">
+          <span>Enter the code</span>
+          <input type="text" id="codeInput" inputmode="numeric" maxlength="6" placeholder="6-digit code" autocomplete="off" />
+        </label>
+        <div class="wiz-error" id="codeError" hidden></div>
         <div class="wiz-actions">
           <button class="wiz-back" data-back>← Back</button>
-          <button class="wiz-next" data-next>Next →</button>
+          <button class="wiz-next" id="codeSubmit">Verify →</button>
         </div>
       </section>
 
-      <!-- STEP 4: API key -->
+      <!-- STEP 4: connect an LLM provider + model -->
       <section class="wiz-panel" data-panel="4" hidden>
         <div class="wiz-icon">🔌</div>
-        <h2 class="wiz-title">Connect your LLM</h2>
-        <p class="wiz-text">
-          QA Orchestrator runs on Groq. Paste a Groq API key to connect. Don't have one?
-          <a href="https://console.groq.com/keys" target="_blank" rel="noopener">Generate a Groq API key →</a>
-        </p>
+        <h2 class="wiz-title">Connect an LLM provider</h2>
+        <p class="wiz-text">Pick a provider, choose a model, and paste your API key. Model and API key are required.</p>
+
+        <div class="prov-grid" id="provGrid"></div>
+
         <label class="wiz-field">
-          <span>Groq API key</span>
-          <input type="password" id="apiKey" placeholder="gsk_..." autocomplete="off" />
+          <span>Model</span>
+          <select id="modelSelect"></select>
         </label>
+
+        <label class="wiz-field">
+          <span>API key</span>
+          <input type="password" id="apiKey" placeholder="Paste your key" autocomplete="off" />
+        </label>
+        <p class="wiz-keyhint">Get a free key for <a id="keyLink" href="#" target="_blank" rel="noopener">this provider →</a></p>
+
         <div class="wiz-error" id="apiError" hidden></div>
         <div class="wiz-actions">
           <button class="wiz-back" data-back>← Back</button>
@@ -206,9 +213,7 @@
       <section class="wiz-panel" data-panel="done" hidden>
         <div class="wiz-icon">✅</div>
         <h2 class="wiz-title">You're all set</h2>
-        <p class="wiz-text">
-          Account created, token issued, and Groq connected. Mission Control is ready.
-        </p>
+        <p class="wiz-text" id="doneText">Account confirmed and provider connected. Mission Control is ready.</p>
         <div class="wiz-actions">
           <button class="wiz-next" id="wizFinish">Enter Mission Control</button>
         </div>
