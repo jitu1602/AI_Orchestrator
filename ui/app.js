@@ -116,9 +116,38 @@ function renderAgents() {
     lines += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="${strokeColor}" stroke-width="1" stroke-dasharray="3 5" />`;
 
     const el = document.createElement("div");
-    el.className = "agent";
+    el.className = "agent" + (a.state === "running" ? " is-running" : "");
+    el.dataset.agent = a.id;
     el.style.left = x + "px";
     el.style.top = y + "px";
+
+    const progress = typeof a.progress === "number" ? a.progress : null;
+    const badge =
+      a.state === "running"
+        ? '<span class="run-badge">● RUNNING</span>'
+        : a.state === "fail"
+        ? '<span class="run-badge fail">✕ FAILED</span>'
+        : a.state === "done"
+        ? '<span class="run-badge done">✓ DONE</span>'
+        : "";
+
+    // The expanded "running card" (progress + output + activity) shows when the
+    // agent is running or has recorded progress; otherwise just the compact node.
+    const showCard = a.state === "running" || (progress !== null && progress < 100);
+    const cardHtml = showCard
+      ? `<div class="agent-card">
+           <div class="agent-card-head">
+             <span class="agent-name">${a.name.replace(/\n/g, " ")}</span>
+             ${badge}
+           </div>
+           <div class="prog-row"><span>Progress</span><span class="prog-pct">${progress ?? 0}%</span></div>
+           <div class="prog-track"><div class="prog-fill" style="width:${progress ?? 0}%"></div></div>
+           <div class="agent-output">▸ ${a.output || a.status}</div>
+           <div class="agent-activity-title">Activity</div>
+           <div class="agent-activity">${(a.activity || []).map(l => `<div>▸ ${l}</div>`).join("") || "<div>▸ —</div>"}</div>
+         </div>`
+      : "";
+
     el.innerHTML = `
       <div class="agent-inner">
         <div class="agent-icon">${a.icon}</div>
@@ -129,7 +158,8 @@ function renderAgents() {
           </div>
           <span class="agent-detail">Details ›</span>
         </div>
-      </div>`;
+      </div>
+      ${cardHtml}`;
     el.querySelector(".agent-detail").addEventListener("click", (ev) => {
       ev.stopPropagation();
       openDrawer(a);
@@ -172,19 +202,88 @@ function renderTrace() {
 function wireControls() {
   const runBtn = document.getElementById("runBtn");
   const input = document.getElementById("testInput");
-  const doRun = () => {
-    const stateEl = document.getElementById("runState");
-    stateEl.textContent = "RUNNING";
-    stateEl.className = "pill pill-fail";
-    document.getElementById("coreMain").textContent = "Orchestrating…";
-    setTimeout(() => {
-      stateEl.textContent = "COMPLETED";
-      stateEl.className = "pill pill-ok";
-      document.getElementById("coreMain").textContent = "Orchestration complete";
-    }, 1600);
-  };
+  const doRun = () => runPipeline(input.value.trim());
   runBtn.addEventListener("click", doRun);
   input.addEventListener("keydown", e => { if (e.key === "Enter") doRun(); });
+}
+
+// ---------- LIVE RUN ORCHESTRATION ----------
+let running = false;
+
+// per-agent scripted activity for the simulated run
+const RUN_SCRIPT = {
+  req: { verb: "Analyzing requirements", lines: ["Parsing target & intent", "Extracting acceptance criteria", "[OK] Extracted 2 requirements"], done: "2 requirements extracted" },
+  tcg: { verb: "Designing test cases", lines: ["Applying equivalence partitioning", "Boundary value analysis", "[OK] Generated 6 test cases"], done: "6 test cases generated" },
+  auto: { verb: "Generating scripts", lines: ["Building Page Objects", "Writing spec files", "[OK] tsc --noEmit clean"], done: "6 scripts built" },
+  exec: { verb: "Executing suite", lines: ["Launching Chromium", "Running 6 tests", "[OK] 6/6 passed"], done: "6/6 passed" },
+  defect: { verb: "Triaging failures", lines: ["Scanning results", "Flaky-check", "[OK] no real defects"], done: "0 defects filed" },
+  report: { verb: "Building report", lines: ["Aggregating metrics", "Traceability matrix", "[OK] report delivered"], done: "report delivered" },
+};
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function pushConsole(t, text) {
+  state.console.push({ t, text });
+  renderConsole();
+  const body = document.getElementById("consoleBody");
+  if (body) body.scrollTop = body.scrollHeight;
+}
+
+async function runPipeline(url) {
+  if (running) return;
+  running = true;
+
+  const stateEl = document.getElementById("runState");
+  const coreMain = document.getElementById("coreMain");
+  stateEl.textContent = "RUNNING";
+  stateEl.className = "pill pill-run";
+  coreMain.textContent = "Orchestrating…";
+
+  // reset agents to idle
+  state.agents.forEach((a) => { a.state = "idle"; a.progress = 0; a.activity = []; a.output = "queued"; });
+  state.console = [{ t: "tag", text: "[orchestrator] pipeline started" }];
+  if (url) pushConsole("dim", `→ target: ${url}`);
+  renderAgents();
+
+  const order = ["req", "tcg", "auto", "exec", "defect", "report"];
+  for (const id of order) {
+    const agent = state.agents.find((a) => a.id === id);
+    const script = RUN_SCRIPT[id];
+    agent.state = "running";
+    agent.activity = [];
+    agent.output = script.verb + "…";
+    pushConsole("tag", `[${id}] ${script.verb}…`);
+
+    // animate progress 0 -> 100 with activity lines dropped in along the way
+    for (let p = 0; p <= 100; p += 10) {
+      agent.progress = p;
+      const li = Math.floor((p / 100) * script.lines.length);
+      if (script.lines[li] && agent.activity[agent.activity.length - 1] !== script.lines[li]) {
+        agent.activity.push(script.lines[li]);
+        agent.output = script.lines[li];
+      }
+      renderAgents();
+      await sleep(120);
+    }
+
+    agent.progress = 100;
+    agent.state = "done";
+    agent.status = script.done;
+    agent.output = script.done;
+    if (!agent.activity.includes(script.lines[script.lines.length - 1])) {
+      agent.activity.push(script.lines[script.lines.length - 1]);
+    }
+    pushConsole("ok", `✓ ${id}: ${script.done}`);
+    renderAgents();
+    await sleep(260);
+  }
+
+  pushConsole("ok", "→ execution: 6/6 passed · 100% pass rate");
+  pushConsole("tag", "[orchestrator] orchestration complete");
+  stateEl.textContent = "COMPLETED";
+  stateEl.className = "pill pill-ok";
+  coreMain.textContent = "Orchestration complete";
+  running = false;
 }
 
 // ---------- AGENT DETAIL DRAWER ----------

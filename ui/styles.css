@@ -55,6 +55,7 @@ body::before {
 .pill-ok { background: rgba(52, 211, 153, 0.14); color: var(--green); border: 1px solid rgba(52,211,153,0.35); }
 .pill-ok-soft { background: rgba(52, 211, 153, 0.10); color: var(--green); border: 1px solid rgba(52,211,153,0.25); }
 .pill-fail { background: rgba(242, 97, 122, 0.14); color: var(--red); border: 1px solid rgba(242,97,122,0.4); }
+.pill-run { background: rgba(56,225,196,0.14); color: var(--cyan); border: 1px solid rgba(56,225,196,0.4); }
 
 /* ================= TOP BAR ================= */
 .topbar {
@@ -477,6 +478,52 @@ body::before {
 .s-fail { color: var(--red); }
 .s-run { color: var(--cyan); }
 .agent:hover .agent-icon { border-color: rgba(56,225,196,0.6); box-shadow: 0 0 14px rgba(56,225,196,0.3); }
+
+/* running: pulse the node icon */
+.agent.is-running { z-index: 6; }
+.agent.is-running .agent-icon {
+  border-color: var(--cyan);
+  box-shadow: 0 0 18px rgba(56,225,196,0.6);
+  animation: agentPulse 1.4s ease-in-out infinite;
+}
+@keyframes agentPulse { 0%,100% { box-shadow: 0 0 14px rgba(56,225,196,0.4); } 50% { box-shadow: 0 0 24px rgba(56,225,196,0.8); } }
+
+/* the expanded running card (progress + activity) */
+.agent-card {
+  width: 210px;
+  margin-top: 8px;
+  background: rgba(9,16,29,0.96);
+  border: 1px solid rgba(56,225,196,0.35);
+  border-radius: 12px;
+  padding: 11px 12px;
+  box-shadow: 0 0 26px rgba(56,225,196,0.18);
+}
+.agent-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 9px; }
+.agent-card-head .agent-name { font-size: 12px; font-weight: 700; }
+.run-badge {
+  font-size: 8.5px; font-weight: 700; letter-spacing: 0.05em;
+  padding: 2px 7px; border-radius: 10px;
+  background: rgba(56,225,196,0.14); color: var(--cyan);
+}
+.run-badge.done { background: rgba(52,211,153,0.14); color: var(--green); }
+.run-badge.fail { background: rgba(242,97,122,0.14); color: var(--red); }
+
+.prog-row { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-dim); margin-bottom: 4px; }
+.prog-pct { color: var(--cyan); font-weight: 700; }
+.prog-track { height: 4px; border-radius: 4px; background: rgba(255,255,255,0.06); overflow: hidden; margin-bottom: 9px; }
+.prog-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--cyan-2), var(--cyan)); transition: width 0.15s linear; }
+
+.agent-output {
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 9.5px; color: var(--cyan);
+  background: rgba(56,225,196,0.06);
+  border: 1px solid rgba(56,225,196,0.18);
+  border-radius: 7px; padding: 6px 8px; margin-bottom: 9px;
+  line-height: 1.35;
+}
+.agent-activity-title { font-size: 9px; letter-spacing: 0.14em; color: var(--text-dim); text-transform: uppercase; margin-bottom: 5px; }
+.agent-activity { font-family: "Cascadia Code", Consolas, monospace; font-size: 9.5px; color: var(--text-dim); line-height: 1.5; max-height: 60px; overflow-y: auto; }
+.agent-activity div { padding: 1px 0; }
 
 /* ---- right column ---- */
 .rightcol { display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
