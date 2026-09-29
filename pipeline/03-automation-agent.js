@@ -77,8 +77,9 @@ After(async function (this: QAWorld, scenario) {
 }
 
 function stepDefs() {
-  // Generic steps that back the generated Gherkin. Deliberately resilient so
-  // the executor's self-heal has room to retry rather than hard-crash.
+  // Generic steps that back the generated Gherkin. The Then step parses the
+  // LLM-authored assertion string and verifies it for real. Deliberately
+  // resilient so the executor's self-heal has room to retry rather than crash.
   return `import { Given, When, Then } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
 import { AppPage } from '../pages/AppPage';
@@ -90,26 +91,41 @@ Given('the application is open', async function (this: QAWorld) {
   expect(await app.title()).toBeTruthy();
 });
 
-When(/^the user performs "(.*)" with (valid|invalid|empty or boundary) (?:data|input)$/, async function (this: QAWorld, action: string, variant: string) {
+When(/^the user performs the "(.*)" action with (valid|invalid|empty or boundary) input$/, async function (this: QAWorld, type: string, variant: string) {
   const app = new AppPage(this.page);
-  // Interact best-effort; the intent is captured, the executor self-heals flakiness.
-  await app.clickPrimary().catch(() => {});
-  this.attach(\`action=\${action} variant=\${variant}\`, 'text/plain');
+  // Best-effort interaction that reflects the variant; the assertion (next step)
+  // is what actually decides pass/fail.
+  if (variant === 'valid') {
+    await app.clickPrimary().catch(() => {});
+  } else if (variant === 'invalid') {
+    // trigger a likely-error path: submit without meaningful input
+    await app.clickPrimary().catch(() => {});
+  }
+  this.attach(\`type=\${type} variant=\${variant}\`, 'text/plain');
 });
 
-Then('the expected outcome is observed', async function (this: QAWorld) {
-  // Grounded assertion: the page is still responsive and has a title.
-  expect(await this.page.title()).toBeTruthy();
-});
+Given(/^note "(.*)"$/, async function () { /* journey marker for e2e */ });
 
-Then('the expected result is shown', async function (this: QAWorld) {
-  expect(await this.page.title()).toBeTruthy();
-});
+// The real assertion: parse the LLM's checkable claim and verify it.
+Then(/^the assertion "(.*)" holds$/, async function (this: QAWorld, assertion: string) {
+  const a = assertion.toLowerCase().trim();
+  let m: RegExpMatchArray | null;
 
-// e2e journey steps
-Given(/^Step \\d+:/, async function () { /* journey marker */ });
-Then('the full journey completes successfully', async function (this: QAWorld) {
-  expect(await this.page.title()).toBeTruthy();
+  if ((m = a.match(/^url contains (.+)$/))) {
+    await expect(this.page).toHaveURL(new RegExp(m[1].replace(/[.*+?^\${}()|[\\]\\\\]/g, '\\\\$&')), { timeout: 8000 });
+  } else if ((m = a.match(/^text (.+) is visible$/))) {
+    await expect(this.page.getByText(new RegExp(m[1], 'i')).first()).toBeVisible({ timeout: 8000 });
+  } else if ((m = a.match(/^element (.+) is visible$/))) {
+    await expect(this.page.locator(m[1]).first()).toBeVisible({ timeout: 8000 });
+  } else if (/page title is not empty/.test(a)) {
+    expect(await this.page.title()).toBeTruthy();
+  } else if (/error/.test(a)) {
+    // generic "a clear error is shown"
+    await expect(this.page.locator('[role="alert"], .error, .error-message').first()).toBeVisible({ timeout: 8000 });
+  } else {
+    // unknown assertion phrasing — fall back to a liveness check
+    expect(await this.page.title()).toBeTruthy();
+  }
 });
 `;
 }

@@ -7,6 +7,7 @@
 // crawled elements. Every story cites the on-page evidence it came from.
 const path = require('path');
 const { writeFile, writeJson, log, pwChromium } = require('./lib');
+const groq = require('./groq');
 
 async function crawl(url) {
   const chromium = pwChromium();
@@ -63,11 +64,40 @@ async function crawl(url) {
   return ctx;
 }
 
+// LLM-powered story derivation. Sends the crawled structure to Groq and asks
+// for intelligent, intent-level user stories grounded in the actual page.
+async function deriveStoriesLLM(ctx) {
+  const system =
+    'You are a senior QA requirement analyst. Given the extracted structure of a real web page, ' +
+    'produce intelligent, testable user stories grounded ONLY in what is present on the page. ' +
+    'Do not invent features not implied by the structure. Return strict JSON of the form ' +
+    '{"stories":[{"id":"US-001","title":"...","role":"...","want":"...","so":"...","priority":"P1|P2|P3","evidence":"which page element(s) this came from"}]}. ' +
+    'Cover the primary flows the page enables (auth, search, navigation, forms, transactions) where evidence exists.';
+  const user = JSON.stringify({
+    url: ctx.url, title: ctx.title, httpStatus: ctx.status,
+    structure: ctx.structure || {},
+  }).slice(0, 12000);
+
+  const out = await groq.chatJSON(system, user, { temperature: 0.2, maxTokens: 2200 });
+  const stories = (out.stories || []).map((s, i) => ({
+    id: s.id || `US-${String(i + 1).padStart(3, '0')}`,
+    title: s.title || 'Untitled story',
+    role: s.role || 'user',
+    want: s.want || '',
+    so: s.so || '',
+    priority: /P[0-3]/.test(s.priority) ? s.priority : 'P1',
+    evidence: s.evidence || '(LLM-derived)',
+    source: 'llm',
+  }));
+  if (!stories.length) throw new Error('LLM returned no stories');
+  return stories;
+}
+
 function deriveStories(ctx) {
   const stories = [];
   let n = 1;
   const add = (title, role, want, so, evidence, priority = 'P1') =>
-    stories.push({ id: `US-${String(n++).padStart(3, '0')}`, title, role, want, so, priority, evidence });
+    stories.push({ id: `US-${String(n++).padStart(3, '0')}`, title, role, want, so, priority, evidence, source: 'heuristic' });
 
   const s = ctx.structure || {};
   // Page-load story (always grounded — the page responded)
@@ -120,7 +150,7 @@ function deriveStories(ctx) {
   return stories;
 }
 
-function toMarkdown(ctx, stories) {
+function toMarkdown(ctx, stories, mode = 'heuristic') {
   const s = ctx.structure || {};
   const list = (arr) => (arr && arr.length ? arr.map((x) => `- ${x}`).join('\n') : '- (none found)');
   return `# Knowledge Context — ${ctx.title || ctx.url}
@@ -154,8 +184,7 @@ ${(s.links || []).slice(0, 15).map((l) => `- [${l.text}](${l.href})`).join('\n')
 ${stories.map((u) => `### ${u.id} · ${u.title} (${u.priority})\nAs a **${u.role}**, I want to ${u.want}, so that ${u.so}.\n_Evidence:_ ${u.evidence}`).join('\n\n')}
 
 ---
-_Stories are derived heuristically from crawled page structure. Where an LLM key is
-connected, this step can produce richer, intent-level stories._
+_Story derivation mode: **${mode === 'llm' ? 'LLM (Groq)' : 'heuristic'}**._${mode === 'llm' ? '' : '\n_Connect a Groq key (GROQ_API_KEY) to produce richer, intent-level stories._'}
 `;
 }
 
@@ -164,13 +193,27 @@ async function run(url, runDir) {
   const ctx = await crawl(url);
   log('requirement-analyzer', ctx.ok ? `crawled OK (HTTP ${ctx.status})` : `crawl failed: ${ctx.error}`);
 
-  const stories = deriveStories(ctx);
-  const mdPath = writeFile(path.join(runDir, 'requirements', 'knowledge-context.md'), toMarkdown(ctx, stories));
-  const storiesPath = writeJson(path.join(runDir, 'requirements', 'user-stories.json'), { url, generatedAt: new Date().toISOString(), stories });
+  let stories;
+  let mode = 'heuristic';
+  if (groq.isEnabled()) {
+    try {
+      log('requirement-analyzer', `asking Groq (${groq.model()}) for intelligent user stories…`);
+      stories = await deriveStoriesLLM(ctx);
+      mode = 'llm';
+      log('requirement-analyzer', `LLM produced ${stories.length} stories`);
+    } catch (e) {
+      log('requirement-analyzer', `LLM failed (${String(e.message).slice(0, 80)}); using heuristics`);
+    }
+  } else {
+    log('requirement-analyzer', 'no Groq key set (GROQ_API_KEY); using heuristics');
+  }
+  if (!stories) stories = deriveStories(ctx);
+  const mdPath = writeFile(path.join(runDir, 'requirements', 'knowledge-context.md'), toMarkdown(ctx, stories, mode));
+  const storiesPath = writeJson(path.join(runDir, 'requirements', 'user-stories.json'), { url, generatedAt: new Date().toISOString(), mode, stories });
   writeJson(path.join(runDir, 'requirements', 'crawl-context.json'), ctx);
 
-  log('requirement-analyzer', `wrote ${stories.length} user stories + knowledge-context.md`);
-  return { ok: true, storiesCount: stories.length, stories, mdPath, storiesPath, reachable: ctx.ok };
+  log('requirement-analyzer', `wrote ${stories.length} user stories (${mode}) + knowledge-context.md`);
+  return { ok: true, storiesCount: stories.length, stories, mode, mdPath, storiesPath, reachable: ctx.ok };
 }
 
 module.exports = { run };

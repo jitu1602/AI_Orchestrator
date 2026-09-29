@@ -30,7 +30,7 @@ async function main() {
   // 1. Requirement Analyzer (crawl + stories)
   stages.requirement = await requirement.run(url, runDir);
   // 2. Test Case Generator
-  stages.testcase = testcase.run(runDir);
+  stages.testcase = await testcase.run(runDir);
   // 3. Automation Generator
   stages.automation = automation.run(runDir);
   // 4. Execution (self-healing)
