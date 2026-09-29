@@ -26,7 +26,8 @@ function apiKey() {
   return process.env.GROQ_API_KEY || process.env.LLM_API_KEY || process.env.API_KEY || '';
 }
 function model() {
-  return process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+  // Default to a currently-available Groq chat model (verify with GET /models).
+  return process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
 }
 function isEnabled() {
   return /^gsk_/.test(apiKey());
