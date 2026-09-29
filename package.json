@@ -1,12 +1,11 @@
 {
   "name": "qa-orchestrator-playwright",
   "version": "1.0.0",
-  "description": "Multi-agent QA pipeline: crawl -> requirements -> BDD test cases -> automation -> self-healing execution -> defects -> report",
+  "description": "Multi-agent QA pipeline: crawl -> requirements -> test cases -> Playwright automation -> self-healing execution -> defects -> report",
   "private": true,
   "scripts": {
     "test": "playwright test",
     "test:report": "playwright test --reporter=list,json",
-    "bdd": "cucumber-js",
     "pipeline": "node pipeline/orchestrator.js",
     "ui:data": "node ui/build-data.js",
     "ui:refresh": "playwright test && node ui/build-data.js",
@@ -15,15 +14,13 @@
     "typecheck": "tsc --noEmit",
     "install:browsers": "playwright install"
   },
-  "keywords": ["qa", "playwright", "cucumber", "bdd", "automation", "page-object-model"],
+  "keywords": ["qa", "playwright", "automation", "page-object-model"],
   "author": "QA Orchestrator",
   "license": "MIT",
   "devDependencies": {
-    "@cucumber/cucumber": "^11.0.1",
     "@playwright/test": "^1.48.0",
     "@types/node": "^22.7.0",
     "dotenv": "^16.4.5",
-    "ts-node": "^10.9.2",
     "typescript": "^5.6.0"
   }
 }

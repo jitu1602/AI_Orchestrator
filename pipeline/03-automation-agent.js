@@ -1,30 +1,46 @@
 // Automation Generator agent.
-// From the crawl context + test cases, generates Page Objects, Cucumber step
-// definitions, and the TypeScript support (World/hooks) that back the .feature
-// files. Output is a runnable BDD suite under the run's bdd/ folder.
+// From the crawl context + structured test cases, generates a real Playwright
+// Test suite (Page Object + spec files) — matching the hand-written tests/ style:
+// semantic locators (role/label/placeholder), real data entry, specific
+// assertions, one page object per app, test.describe/expect. No BDD/Cucumber.
 const path = require('path');
-const { readJson, writeFile, log } = require('./lib');
+const { readJson, writeFile, log, slug } = require('./lib');
 
+// ---------- Page Object with semantic locators ----------
 function pageObject(ctx) {
-  const forms = (ctx.structure && ctx.structure.forms) || [];
-  const firstForm = forms[0];
-  const fields = firstForm ? firstForm.inputs : (ctx.structure && ctx.structure.inputs) || [];
-  const fieldMethods = fields
-    .filter((f) => f.name)
-    .slice(0, 10)
+  const s = ctx.structure || {};
+  const forms = s.forms || [];
+  const fields = (forms.length ? forms[0].inputs : s.inputs || []).filter((f) => f.name);
+
+  // For each field, emit a getter using the semantic priority order, plus a
+  // fill helper. Password/email/text get the right locator strategy.
+  const fieldMembers = fields
+    .slice(0, 12)
     .map((f) => {
-      const m = f.name.replace(/[^a-zA-Z0-9]/g, '_');
-      return `  async fill_${m}(value: string) {\n    await this.page.locator('[name="${f.name}"], #${f.name}').first().fill(value);\n  }`;
+      const m = camel(f.name);
+      const loc = locatorFor(f);
+      return `  get ${m}(): Locator {
+    return ${loc};
+  }
+
+  async fill_${m}(value: string): Promise<void> {
+    await this.${m}.clear();
+    await this.${m}.fill(value);
+  }`;
     })
     .join('\n\n');
 
-  return `import { Page } from 'playwright';
+  return `import { Page, Locator } from '@playwright/test';
 
-/** Auto-generated Page Object grounded in the crawled page structure. */
+/**
+ * Auto-generated Page Object for ${ctx.title || ctx.url}.
+ * Semantic locators (role/label/placeholder) preferred over brittle attribute
+ * selectors, mirroring the project's hand-written page-object standard.
+ */
 export class AppPage {
   constructor(private readonly page: Page) {}
 
-  async open() {
+  async goto(): Promise<void> {
     await this.page.goto(process.env.TARGET_APP_URL ?? '${ctx.url}', { waitUntil: 'domcontentloaded' });
   }
 
@@ -32,136 +48,135 @@ export class AppPage {
     return this.page.title();
   }
 
-  /** Best-effort primary action: click the first prominent button. */
-  async clickPrimary() {
-    const btn = this.page.getByRole('button').first();
-    if (await btn.count()) await btn.click();
+  get submitButton(): Locator {
+    return this.page
+      .getByRole('button', { name: /submit|login|sign in|continue|search|go/i })
+      .or(this.page.locator('input[type="submit"], button[type="submit"]'))
+      .first();
   }
 
-${fieldMethods || '  // (no named form fields were discovered on the target)'}
+  get errorMessage(): Locator {
+    return this.page.locator('[role="alert"], .error, .error-message, [data-test="error"]').first();
+  }
+
+  async submit(): Promise<void> {
+    await this.submitButton.click();
+  }
+
+${fieldMembers || '  // (no named form fields were discovered on the target)'}
 }
 `;
 }
 
-function worldSupport() {
-  return `import { setWorldConstructor, World, IWorldOptions, Before, After, setDefaultTimeout, Status } from '@cucumber/cucumber';
-import { chromium, Browser, Page } from 'playwright';
-import * as fs from 'fs';
-import * as path from 'path';
-
-setDefaultTimeout(60_000);
-
-export class QAWorld extends World {
-  browser!: Browser;
-  page!: Page;
-  constructor(opts: IWorldOptions) { super(opts); }
-}
-setWorldConstructor(QAWorld);
-
-Before(async function (this: QAWorld) {
-  this.browser = await chromium.launch();
-  this.page = await this.browser.newPage();
-});
-
-After(async function (this: QAWorld, scenario) {
-  // Capture a screenshot on failure — consumed by the Reporting agent.
-  if (scenario.result?.status === Status.FAILED && this.page) {
-    const dir = path.resolve(process.cwd(), 'screenshots');
-    fs.mkdirSync(dir, { recursive: true });
-    const name = (scenario.pickle.name || 'scenario').replace(/[^a-z0-9]+/gi, '_').slice(0, 60);
-    await this.page.screenshot({ path: path.join(dir, name + '.png'), fullPage: true }).catch(() => {});
-  }
-  if (this.browser) await this.browser.close();
-});
-`;
+function camel(name) {
+  return String(name).replace(/[^a-zA-Z0-9]+(.)?/g, (_, c) => (c ? c.toUpperCase() : '')).replace(/^[A-Z]/, (c) => c.toLowerCase()) || 'field';
 }
 
-function stepDefs() {
-  // Generic steps that back the generated Gherkin. The Then step parses the
-  // LLM-authored assertion string and verifies it for real. Deliberately
-  // resilient so the executor's self-heal has room to retry rather than crash.
-  return `import { Given, When, Then } from '@cucumber/cucumber';
-import { expect } from '@playwright/test';
-import { AppPage } from '../pages/AppPage';
-import { QAWorld } from '../support/world';
+// semantic locator, field-type aware
+function locatorFor(f) {
+  const nm = f.name;
+  if (f.type === 'password') return `this.page.locator('input[type="password"], [name="${nm}"], #${nm}').first()`;
+  if (f.type === 'email') return `this.page.getByRole('textbox', { name: /email/i }).or(this.page.locator('input[type="email"], [name="${nm}"], #${nm}')).first()`;
+  const label = new RegExp((f.placeholder || nm).replace(/[^a-z0-9]+/gi, '|'), 'i').source;
+  return `this.page.getByLabel(/${label}/i).or(this.page.getByPlaceholder(/${label}/i)).or(this.page.locator('[name="${nm}"], #${nm}')).first()`;
+}
 
-Given('the application is open', async function (this: QAWorld) {
-  const app = new AppPage(this.page);
-  await app.open();
-  expect(await app.title()).toBeTruthy();
-});
-
-When(/^the user performs the "(.*)" action with (valid|invalid|empty or boundary) input$/, async function (this: QAWorld, type: string, variant: string) {
-  const app = new AppPage(this.page);
-  // Best-effort interaction that reflects the variant; the assertion (next step)
-  // is what actually decides pass/fail.
-  if (variant === 'valid') {
-    await app.clickPrimary().catch(() => {});
-  } else if (variant === 'invalid') {
-    // trigger a likely-error path: submit without meaningful input
-    await app.clickPrimary().catch(() => {});
-  }
-  this.attach(\`type=\${type} variant=\${variant}\`, 'text/plain');
-});
-
-Given(/^note "(.*)"$/, async function () { /* journey marker for e2e */ });
-
-// The real assertion: parse the LLM's checkable claim and verify it.
-Then(/^the assertion "(.*)" holds$/, async function (this: QAWorld, assertion: string) {
-  const a = assertion.toLowerCase().trim();
-  let m: RegExpMatchArray | null;
-
+// ---------- spec generation ----------
+function assertionCode(assertion) {
+  const a = String(assertion).toLowerCase().trim();
+  let m;
   if ((m = a.match(/^url contains (.+)$/))) {
-    await expect(this.page).toHaveURL(new RegExp(m[1].replace(/[.*+?^\${}()|[\\]\\\\]/g, '\\\\$&')), { timeout: 8000 });
-  } else if ((m = a.match(/^text (.+) is visible$/))) {
-    await expect(this.page.getByText(new RegExp(m[1], 'i')).first()).toBeVisible({ timeout: 8000 });
-  } else if ((m = a.match(/^element (.+) is visible$/))) {
-    await expect(this.page.locator(m[1]).first()).toBeVisible({ timeout: 8000 });
-  } else if (/page title is not empty/.test(a)) {
-    expect(await this.page.title()).toBeTruthy();
-  } else if (/error/.test(a)) {
-    // generic "a clear error is shown"
-    await expect(this.page.locator('[role="alert"], .error, .error-message').first()).toBeVisible({ timeout: 8000 });
-  } else {
-    // unknown assertion phrasing — fall back to a liveness check
-    expect(await this.page.title()).toBeTruthy();
+    const frag = m[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return `    await expect(page).toHaveURL(/${frag}/i);`;
   }
+  if ((m = a.match(/^text (.+) is visible$/))) {
+    return `    await expect(page.getByText(/${escapeRe(m[1])}/i).first()).toBeVisible();`;
+  }
+  if ((m = a.match(/^element (.+) is visible$/))) {
+    return `    await expect(page.locator(${JSON.stringify(m[1])}).first()).toBeVisible();`;
+  }
+  if (/error/.test(a)) return `    await expect(app.errorMessage).toBeVisible();`;
+  return `    expect(await app.title()).toBeTruthy();`;
+}
+
+function escapeRe(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+function actionCode(act) {
+  if (act.goto) return `    await app.goto();`;
+  if (act.fill) {
+    const v = String(act.value || '');
+    const val = v.startsWith('env:') ? `process.env.${v.slice(4)} ?? ''` : JSON.stringify(v);
+    return `    await app.fill_${camel(act.fill)}(${val});`;
+  }
+  if (act.fillInvalid) return `    await app.fill_${camel(act.fillInvalid)}('invalid_${camel(act.fillInvalid)}_value');`;
+  if (act.fillEmpty) return `    await app.fill_${camel(act.fillEmpty)}('');`;
+  if (act.click) return `    await app.submit();`;
+  return `    // (no-op)`;
+}
+
+function specFor(storyTitle, cases) {
+  const body = cases
+    .map((c) => {
+      const steps = (c.actions || []).map(actionCode).join('\n');
+      return `  test(${JSON.stringify(`${c.id}: ${c.title}`)}, async ({ page }) => {
+    const app = new AppPage(page);
+${steps}
+${assertionCode(c.assertion)}
+  });`;
+    })
+    .join('\n\n');
+
+  return `import { test, expect } from '@playwright/test';
+import { AppPage } from '../pages/AppPage';
+
+// ${storyTitle}
+test.describe(${JSON.stringify(storyTitle)}, () => {
+${body}
 });
 `;
 }
 
 function run(runDir) {
   const ctx = readJson(path.join(runDir, 'requirements', 'crawl-context.json'));
-  const bdd = path.join(runDir, 'bdd');
+  const { cases } = readJson(path.join(runDir, 'testcases', 'test-cases.json'));
+  const { stories } = readJson(path.join(runDir, 'requirements', 'user-stories.json'));
 
+  const scriptsDir = path.join(runDir, 'test-scripts');
   const files = [];
-  files.push(writeFile(path.join(bdd, 'pages', 'AppPage.ts'), pageObject(ctx)));
-  files.push(writeFile(path.join(bdd, 'support', 'world.ts'), worldSupport()));
-  files.push(writeFile(path.join(bdd, 'steps', 'common.steps.ts'), stepDefs()));
 
-  // per-run cucumber profile pointing at THIS run's generated suite
-  const profile = `module.exports = {
-  default: {
-    requireModule: ['ts-node/register'],
-    require: ['support/**/*.ts', 'steps/**/*.ts'],
-    paths: ['features/**/*.feature'],
-    format: ['json:report/cucumber.json'],
-    formatOptions: { snippetInterface: 'async-await' },
-    publishQuiet: true,
-    retry: 0
-  }
-};
+  // one page object for the app
+  files.push(writeFile(path.join(scriptsDir, 'pages', 'AppPage.ts'), pageObject(ctx)));
+
+  // group cases by story -> one spec per story
+  const titleFor = (id) => (stories.find((s) => s.id === id) || {}).title || 'Suite';
+  const byStory = {};
+  cases.forEach((c) => ((byStory[c.story_id] = byStory[c.story_id] || []).push(c)));
+  Object.entries(byStory).forEach(([storyId, storyCases]) => {
+    const title = storyId.includes('+') ? 'End-to-end journey' : titleFor(storyId);
+    const fname = storyId.includes('+') ? 'e2e-journey' : `${storyId.toLowerCase()}-${slug(title)}`;
+    files.push(writeFile(path.join(scriptsDir, 'specs', `${fname}.spec.ts`), specFor(title, storyCases)));
+  });
+
+  // a local playwright config so the suite can run standalone from the run dir
+  const cfg = `import { defineConfig, devices } from '@playwright/test';
+import * as dotenv from 'dotenv';
+dotenv.config({ path: require('path').resolve(__dirname, '..', '..', '..', '.env'), override: true });
+export default defineConfig({
+  testDir: './specs',
+  fullyParallel: true,
+  reporter: [['list'], ['json', { outputFile: 'results.json' }]],
+  use: {
+    baseURL: process.env.TARGET_APP_URL ?? '${ctx.url}',
+    screenshot: 'only-on-failure',
+    trace: 'on-first-retry',
+  },
+  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+});
 `;
-  files.push(writeFile(path.join(bdd, 'cucumber.js'), profile));
+  files.push(writeFile(path.join(scriptsDir, 'playwright.config.ts'), cfg));
 
-  const tsconfig = `{
-  "compilerOptions": { "target": "ES2022", "module": "CommonJS", "moduleResolution": "Node", "esModuleInterop": true, "skipLibCheck": true, "strict": false, "types": ["node"] }
-}
-`;
-  files.push(writeFile(path.join(bdd, 'tsconfig.json'), tsconfig));
-
-  log('automation-generator', `generated page object + step defs + world + profile (${files.length} files)`);
-  return { ok: true, files: files.map((f) => path.relative(runDir, f)) };
+  log('automation-generator', `generated Playwright suite: 1 page object + ${Object.keys(byStory).length} spec file(s)`);
+  return { ok: true, files: files.map((f) => path.relative(runDir, f)), specCount: Object.keys(byStory).length };
 }
 
 module.exports = { run };

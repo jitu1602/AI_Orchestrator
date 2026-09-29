@@ -46,8 +46,46 @@ async function main() {
   writeJson(path.join(RUNS, 'latest.json'), { runId, url, summary: stages.reporting.summary });
   updateDashboard(url, runDir, stages);
 
+  // publish a flat, committed copy of the artifacts into top-level folders
+  publishArtifacts(runId, runDir);
+
   log('orchestrator', `orchestration complete — open output/${runId}/report/index.html`);
   console.log('\nSUMMARY:', JSON.stringify(stages.reporting.summary, null, 2));
+}
+
+// Copy this run's artifacts into top-level, editor-visible, git-tracked folders.
+// Each run gets its own subfolder (keyed by runId) so runs don't overwrite each
+// other, and a "latest" copy is kept at the folder root for quick access.
+function publishArtifacts(runId, runDir) {
+  const map = [
+    ['requirements', 'requirements'],
+    ['testcases', 'test-cases'],
+    ['test-scripts', 'test-scripts'],
+    ['execution', 'execution'],
+    ['defects', 'defects'],
+    ['report', 'reports'],
+  ];
+  for (const [src, dest] of map) {
+    const from = path.join(runDir, src);
+    if (!fs.existsSync(from)) continue;
+    // per-run copy
+    copyDir(from, path.join(ROOT, dest, runId));
+    // latest copy — clear first so it reflects ONLY the current run
+    const latestDir = path.join(ROOT, dest, 'latest');
+    fs.rmSync(latestDir, { recursive: true, force: true });
+    copyDir(from, latestDir);
+  }
+  log('orchestrator', 'artifacts published to requirements/ test-cases/ test-scripts/ execution/ defects/ reports/');
+}
+
+function copyDir(from, to) {
+  fs.mkdirSync(to, { recursive: true });
+  for (const entry of fs.readdirSync(from, { withFileTypes: true })) {
+    const s = path.join(from, entry.name);
+    const d = path.join(to, entry.name);
+    if (entry.isDirectory()) copyDir(s, d);
+    else fs.copyFileSync(s, d);
+  }
 }
 
 // translate the real run into the dashboard's data.json shape

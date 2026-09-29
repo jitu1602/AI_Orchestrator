@@ -15,8 +15,8 @@ function run(runDir, meta) {
   const passRate = exec.executed ? Math.round((exec.passed / exec.executed) * 100) : 0;
   const totalMs = (exec.rows || []).reduce((s, r) => s + (r.durationMs || 0), 0);
 
-  // screenshots live under bdd/screenshots; reference them relatively in the report
-  const shotDir = path.join(runDir, 'bdd', 'screenshots');
+  // failure screenshots are collected under execution/screenshots by the executor
+  const shotDir = path.join(runDir, 'execution', 'screenshots');
   const shots = fs.existsSync(shotDir) ? fs.readdirSync(shotDir).filter((f) => f.endsWith('.png')) : [];
 
   const rowHtml = (exec.rows || []).map((r) => `
@@ -30,7 +30,7 @@ function run(runDir, meta) {
     </tr>`).join('');
 
   const shotHtml = shots.length
-    ? shots.map((s) => `<figure><img src="../bdd/screenshots/${s}" alt="${s}"/><figcaption>${s}</figcaption></figure>`).join('')
+    ? shots.map((s) => `<figure><img src="../execution/screenshots/${s}" alt="${s}"/><figcaption>${s}</figcaption></figure>`).join('')
     : '<p class="muted">No failure screenshots (no failures, or none captured).</p>';
 
   const defectHtml = defects.total

@@ -59,12 +59,13 @@ function isEnabled() {
 }
 
 // ---- Groq (OpenAI-compatible) ----
-function groqChat(messages, { temperature = 0.2, maxTokens = 2048 } = {}) {
+// jsonMode=true asks Groq to enforce JSON (can 400 on complex schemas);
+// jsonMode=false lets the model return text we parse defensively.
+function groqChat(messages, { temperature = 0.2, maxTokens = 2048, jsonMode = true } = {}) {
   return new Promise((resolve, reject) => {
-    const body = JSON.stringify({
-      model: model(), messages, temperature, max_tokens: maxTokens,
-      response_format: { type: 'json_object' },
-    });
+    const payload = { model: model(), messages, temperature, max_tokens: maxTokens };
+    if (jsonMode) payload.response_format = { type: 'json_object' };
+    const body = JSON.stringify(payload);
     const req = https.request(
       {
         hostname: 'api.groq.com', path: '/openai/v1/chat/completions', method: 'POST',
@@ -126,19 +127,34 @@ function chat(messages, opts) {
   return provider() === 'groq' ? groqChat(messages, opts) : ollamaChat(messages, opts);
 }
 
-// Ask the model for strict JSON; parse defensively (strip fences if any).
-async function chatJSON(system, user, opts) {
-  const raw = await chat(
-    [
-      { role: 'system', content: system },
-      { role: 'user', content: user },
-    ],
-    opts
-  );
+function parseJson(raw) {
   let text = String(raw).trim();
   const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (fence) text = fence[1].trim();
+  // last resort: slice from first { to last }
+  if (!/^[[{]/.test(text)) {
+    const a = text.indexOf('{'); const b = text.lastIndexOf('}');
+    if (a >= 0 && b > a) text = text.slice(a, b + 1);
+  }
   return JSON.parse(text);
+}
+
+// Ask the model for JSON; parse defensively. On Groq's json-validation 400,
+// retry once WITHOUT json mode (the model returns JSON text we parse ourselves).
+async function chatJSON(system, user, opts = {}) {
+  const messages = [
+    { role: 'system', content: system + ' Respond with ONLY valid minified JSON, no prose, no code fences.' },
+    { role: 'user', content: user },
+  ];
+  try {
+    return parseJson(await chat(messages, opts));
+  } catch (e) {
+    if (provider() === 'groq' && /HTTP 400|validate JSON|Unexpected|JSON/i.test(String(e.message))) {
+      const raw = await groqChat(messages, { ...opts, jsonMode: false });
+      return parseJson(raw);
+    }
+    throw e;
+  }
 }
 
 module.exports = { isEnabled, model, provider, chat, chatJSON };
