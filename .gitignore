@@ -9,7 +9,10 @@ test-results/
 playwright-report/
 playwright/.cache/
 
-# Pipeline run artifacts (generated per run)
+# Pipeline run artifacts (generated per run).
+# NOTE: output/ holds generated requirements, test cases, scripts, and reports.
+# It is ignored from git (regenerated per run) but IS visible in your editor.
+output/
 runs/
 screenshots/
 bdd/report/

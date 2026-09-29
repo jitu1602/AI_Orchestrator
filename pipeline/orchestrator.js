@@ -23,7 +23,7 @@ async function main() {
   const runId = `${ts()}-${slug(url)}`;
   const runDir = ensureDir(path.join(RUNS, runId));
   log('orchestrator', `pipeline started for ${url}`);
-  log('orchestrator', `artifacts -> runs/${runId}/`);
+  log('orchestrator', `artifacts -> output/${runId}/`);
 
   const stages = {};
 
@@ -46,7 +46,7 @@ async function main() {
   writeJson(path.join(RUNS, 'latest.json'), { runId, url, summary: stages.reporting.summary });
   updateDashboard(url, runDir, stages);
 
-  log('orchestrator', `orchestration complete — open runs/${runId}/report/index.html`);
+  log('orchestrator', `orchestration complete — open output/${runId}/report/index.html`);
   console.log('\nSUMMARY:', JSON.stringify(stages.reporting.summary, null, 2));
 }
 

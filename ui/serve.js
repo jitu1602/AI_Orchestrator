@@ -16,7 +16,7 @@ const { spawn } = require('child_process');
 const PORT = process.env.UI_PORT ? Number(process.env.UI_PORT) : 4173;
 const UI = __dirname;
 const ROOT = path.resolve(__dirname, '..');
-const RUNS = path.join(ROOT, 'runs');
+const RUNS = path.join(ROOT, 'output');
 
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
@@ -86,7 +86,7 @@ http
     }
 
     // ---- report assets (screenshots) referenced as ../bdd/... from the report ----
-    if (route.startsWith('/runs/')) {
+    if (route.startsWith('/output/')) {
       const fp = path.join(ROOT, decodeURIComponent(route));
       if (fp.startsWith(RUNS) && fs.existsSync(fp)) {
         return send(res, 200, MIME[path.extname(fp)] || 'application/octet-stream', fs.readFileSync(fp));

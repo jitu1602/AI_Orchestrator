@@ -3,7 +3,9 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const RUNS = path.join(ROOT, 'runs');
+// Artifacts go under output/ (visible in the editor) rather than a gitignored
+// folder, so generated requirements/test-cases/scripts/reports are easy to find.
+const RUNS = path.join(ROOT, 'output');
 
 function ts() {
   return new Date().toISOString().replace(/[:.]/g, '-');
