@@ -105,7 +105,7 @@ async function run(runDir) {
 
   if (groq.isEnabled()) {
     try {
-      log('test-case-generator', `asking Groq (${groq.model()}) for intelligent test cases…`);
+      log('test-case-generator', `asking ${groq.provider()} (${groq.model()}) for intelligent test cases…`);
       allCases = await casesForStoriesLLM(stories, ctx, idxRef);
       mode = 'llm';
       log('test-case-generator', `LLM produced ${allCases.length} test cases`);
@@ -113,7 +113,7 @@ async function run(runDir) {
       log('test-case-generator', `LLM failed (${String(e.message).slice(0, 80)}); using heuristics`);
     }
   } else {
-    log('test-case-generator', 'no Groq key set; using heuristics');
+    log('test-case-generator', 'no LLM available; using heuristics');
   }
   if (!allCases.length) {
     stories.forEach((story) => allCases.push(...casesForStoryHeuristic(story, idxRef)));

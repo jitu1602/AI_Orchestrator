@@ -197,7 +197,7 @@ async function run(url, runDir) {
   let mode = 'heuristic';
   if (groq.isEnabled()) {
     try {
-      log('requirement-analyzer', `asking Groq (${groq.model()}) for intelligent user stories…`);
+      log('requirement-analyzer', `asking ${groq.provider()} (${groq.model()}) for intelligent user stories…`);
       stories = await deriveStoriesLLM(ctx);
       mode = 'llm';
       log('requirement-analyzer', `LLM produced ${stories.length} stories`);
@@ -205,7 +205,7 @@ async function run(url, runDir) {
       log('requirement-analyzer', `LLM failed (${String(e.message).slice(0, 80)}); using heuristics`);
     }
   } else {
-    log('requirement-analyzer', 'no Groq key set (GROQ_API_KEY); using heuristics');
+    log('requirement-analyzer', 'no LLM available; using heuristics');
   }
   if (!stories) stories = deriveStories(ctx);
   const mdPath = writeFile(path.join(runDir, 'requirements', 'knowledge-context.md'), toMarkdown(ctx, stories, mode));
