@@ -1,7 +1,8 @@
 {
   "runState": "COMPLETED",
   "coreMessage": "Orchestration complete",
-  "generatedAt": "2026-09-28T02:10:02.036Z",
+  "generatedAt": "2026-09-29T11:50:29.515Z",
+  "target": "https://www.saucedemo.com",
   "metrics": {
     "pipeline": [
       {
@@ -12,13 +13,13 @@
       },
       {
         "icon": "🧪",
-        "val": 6,
+        "val": 7,
         "label": "Test Cases",
         "cls": "c-cyan"
       },
       {
         "icon": "</>",
-        "val": 6,
+        "val": 7,
         "label": "Scripts",
         "cls": "c-cyan"
       },
@@ -32,7 +33,7 @@
     "execution": [
       {
         "icon": "▶",
-        "val": 6,
+        "val": 7,
         "label": "Executed",
         "cls": "c-amber"
       },
@@ -44,15 +45,15 @@
       },
       {
         "icon": "✕",
-        "val": 0,
+        "val": 1,
         "label": "Failed",
-        "cls": "c-green"
+        "cls": "c-red"
       },
       {
         "icon": "%",
-        "val": "100%",
+        "val": "86%",
         "label": "Pass Rate",
-        "cls": "c-green"
+        "cls": "c-red"
       }
     ],
     "quality": [
@@ -64,9 +65,9 @@
       },
       {
         "icon": "🐞",
-        "val": 0,
+        "val": 1,
         "label": "Defects Filed",
-        "cls": "c-green"
+        "cls": "c-red"
       },
       {
         "icon": "❤",
@@ -81,238 +82,46 @@
       "id": "req",
       "name": "Requirement\nAnalyzer",
       "icon": "🔍",
-      "status": "2 requirements extracted",
+      "status": "2 stories",
       "state": "done",
       "angle": 270,
-      "r": 0.34,
-      "detail": {
-        "subtitle": "2 requirements extracted · explicit + inferred",
-        "sections": [
-          {
-            "kind": "kv",
-            "title": "REQ-001 · Authentication",
-            "items": [
-              [
-                "Title",
-                "User login with valid credentials"
-              ],
-              [
-                "Type",
-                "functional"
-              ],
-              [
-                "Priority",
-                "P1"
-              ],
-              [
-                "Derivation",
-                "explicit"
-              ],
-              [
-                "Acceptance",
-                "AC-001-1 valid creds → inventory; AC-001-2 invalid → error"
-              ]
-            ]
-          },
-          {
-            "kind": "kv",
-            "title": "REQ-002 · Cart management",
-            "items": [
-              [
-                "Title",
-                "Add / remove products in cart"
-              ],
-              [
-                "Type",
-                "functional"
-              ],
-              [
-                "Priority",
-                "P1"
-              ],
-              [
-                "Derivation",
-                "inferred"
-              ],
-              [
-                "Acceptance",
-                "AC-002-1 add increments badge; AC-002-2 remove empties cart"
-              ]
-            ]
-          }
-        ]
-      }
+      "r": 0.34
     },
     {
       "id": "tcg",
       "name": "Test Case\nGenerator",
       "icon": "🧪",
-      "status": "6 test cases generated",
+      "status": "7 test cases",
       "state": "done",
       "angle": 330,
-      "r": 0.4,
-      "detail": {
-        "subtitle": "6 test cases · EP · BVA · decision table",
-        "sections": [
-          {
-            "kind": "cases",
-            "title": "Generated test cases",
-            "rows": [
-              {
-                "id": "TC-004",
-                "title": "TC-004: Verify adding a product increments the cart badge count",
-                "technique": "positive"
-              },
-              {
-                "id": "TC-005",
-                "title": "TC-005: Verify an added product appears on the cart page",
-                "technique": "positive"
-              },
-              {
-                "id": "TC-006",
-                "title": "TC-006: Verify removing a product empties the cart",
-                "technique": "positive"
-              },
-              {
-                "id": "TC-001",
-                "title": "TC-001: Verify user logs in successfully with valid credentials",
-                "technique": "positive"
-              },
-              {
-                "id": "TC-002",
-                "title": "TC-002: Verify login fails with an invalid password",
-                "technique": "error_guessing"
-              },
-              {
-                "id": "TC-003",
-                "title": "TC-003: Verify login fails when the username field is left empty",
-                "technique": "error_guessing"
-              }
-            ]
-          }
-        ]
-      }
+      "r": 0.4
     },
     {
       "id": "auto",
       "name": "Automation\nGenerator",
       "icon": "</>",
-      "status": "6 scripts built",
+      "status": "scripts built",
       "state": "done",
       "angle": 30,
-      "r": 0.4,
-      "detail": {
-        "subtitle": "6 scripts · Page Object Model · Playwright TS",
-        "sections": [
-          {
-            "kind": "list",
-            "title": "Page objects",
-            "items": [
-              "LoginPage.ts",
-              "InventoryPage.ts",
-              "CartPage.ts"
-            ]
-          },
-          {
-            "kind": "list",
-            "title": "Spec files",
-            "items": [
-              "login.spec.ts",
-              "cart.spec.ts"
-            ]
-          },
-          {
-            "kind": "note",
-            "text": "Semantic locators (role → label → placeholder). Env-driven config. tsc --noEmit clean."
-          }
-        ]
-      }
+      "r": 0.4
     },
     {
       "id": "exec",
       "name": "Execution\nAgent",
       "icon": "▷",
-      "status": "6/6 passed",
-      "state": "done",
+      "status": "6/7 passed",
+      "state": "fail",
       "angle": 90,
-      "r": 0.34,
-      "detail": {
-        "subtitle": "6/6 passed · 100% · 0 flaky",
-        "sections": [
-          {
-            "kind": "results",
-            "title": "Execution results",
-            "rows": [
-              {
-                "id": "TC-004",
-                "title": "TC-004: Verify adding a product increments the cart badge count",
-                "status": "passed",
-                "duration": "3.0s",
-                "file": "cart.spec.ts",
-                "error": null
-              },
-              {
-                "id": "TC-005",
-                "title": "TC-005: Verify an added product appears on the cart page",
-                "status": "passed",
-                "duration": "3.1s",
-                "file": "cart.spec.ts",
-                "error": null
-              },
-              {
-                "id": "TC-006",
-                "title": "TC-006: Verify removing a product empties the cart",
-                "status": "passed",
-                "duration": "3.0s",
-                "file": "cart.spec.ts",
-                "error": null
-              },
-              {
-                "id": "TC-001",
-                "title": "TC-001: Verify user logs in successfully with valid credentials",
-                "status": "passed",
-                "duration": "2.9s",
-                "file": "login.spec.ts",
-                "error": null
-              },
-              {
-                "id": "TC-002",
-                "title": "TC-002: Verify login fails with an invalid password",
-                "status": "passed",
-                "duration": "2.9s",
-                "file": "login.spec.ts",
-                "error": null
-              },
-              {
-                "id": "TC-003",
-                "title": "TC-003: Verify login fails when the username field is left empty",
-                "status": "passed",
-                "duration": "2.9s",
-                "file": "login.spec.ts",
-                "error": null
-              }
-            ]
-          }
-        ]
-      }
+      "r": 0.34
     },
     {
       "id": "defect",
       "name": "Defect\nDetector",
       "icon": "🐞",
-      "status": "0 defects filed",
+      "status": "1 defects",
       "state": "done",
       "angle": 150,
-      "r": 0.4,
-      "detail": {
-        "subtitle": "No real defects · flaky check clean",
-        "sections": [
-          {
-            "kind": "note",
-            "text": "All tests passed. No failures to triage, no flaky signals detected."
-          }
-        ]
-      }
+      "r": 0.4
     },
     {
       "id": "report",
@@ -321,92 +130,25 @@
       "status": "report delivered",
       "state": "done",
       "angle": 210,
-      "r": 0.4,
-      "detail": {
-        "subtitle": "Final QA report · traceability aligned",
-        "sections": [
-          {
-            "kind": "kv",
-            "title": "Summary",
-            "items": [
-              [
-                "Test cases",
-                "6"
-              ],
-              [
-                "Executed",
-                "6"
-              ],
-              [
-                "Passed",
-                "6"
-              ],
-              [
-                "Failed",
-                "0"
-              ],
-              [
-                "Pass rate",
-                "100%"
-              ],
-              [
-                "Requirement coverage",
-                "100%"
-              ]
-            ]
-          },
-          {
-            "kind": "trace",
-            "title": "Traceability",
-            "rows": [
-              {
-                "req": "REQ-001",
-                "cases": 2,
-                "align": "Covered"
-              },
-              {
-                "req": "REQ-002",
-                "cases": 3,
-                "align": "Covered"
-              }
-            ]
-          }
-        ]
-      }
+      "r": 0.4
     }
   ],
   "console": [
     {
       "t": "tag",
-      "text": "[orchestrator] pipeline started"
+      "text": "[orchestrator] target https://www.saucedemo.com"
     },
     {
       "t": "ok",
-      "text": "✓ TC-004: Verify adding a product increments the cart badge count"
+      "text": "✓ 2 stories · 7 test cases"
+    },
+    {
+      "t": "fail",
+      "text": "→ execution: 6/7 passed · 86%"
     },
     {
       "t": "ok",
-      "text": "✓ TC-005: Verify an added product appears on the cart page"
-    },
-    {
-      "t": "ok",
-      "text": "✓ TC-006: Verify removing a product empties the cart"
-    },
-    {
-      "t": "ok",
-      "text": "✓ TC-001: Verify user logs in successfully with valid credentials"
-    },
-    {
-      "t": "ok",
-      "text": "✓ TC-002: Verify login fails with an invalid password"
-    },
-    {
-      "t": "ok",
-      "text": "✓ TC-003: Verify login fails when the username field is left empty"
-    },
-    {
-      "t": "ok",
-      "text": "→ execution: 6/6 passed · 100% pass rate"
+      "text": "→ 0 self-healed · 1 defects"
     },
     {
       "t": "tag",
@@ -414,11 +156,11 @@
     }
   ],
   "deepeval": {
-    "verdict": "PASS · 100%",
+    "verdict": "FAIL · 86%",
     "bars": [
       {
         "label": "Overall Accuracy",
-        "val": 100,
+        "val": 86,
         "color": "var(--blue)"
       },
       {
@@ -428,7 +170,7 @@
       },
       {
         "label": "Script Quality",
-        "val": 100,
+        "val": 86,
         "color": "var(--cyan)"
       },
       {
@@ -439,20 +181,7 @@
     ]
   },
   "trace": {
-    "rows": [
-      {
-        "req": "REQ-001",
-        "desc": "User login with valid credentials",
-        "cases": 2,
-        "align": "Covered ✓✓"
-      },
-      {
-        "req": "REQ-002",
-        "desc": "Shopping cart add / remove",
-        "cases": 3,
-        "align": "Covered"
-      }
-    ],
-    "foot": "2/2 requirements covered"
+    "rows": [],
+    "foot": "2 stories covered"
   }
 }

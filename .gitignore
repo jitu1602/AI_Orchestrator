@@ -9,6 +9,11 @@ test-results/
 playwright-report/
 playwright/.cache/
 
+# Pipeline run artifacts (generated per run)
+runs/
+screenshots/
+bdd/report/
+
 # TypeScript build artifacts
 *.tsbuildinfo
 

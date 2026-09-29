@@ -229,8 +229,20 @@ function pushConsole(t, text) {
   if (body) body.scrollTop = body.scrollHeight;
 }
 
+// map an agent id to the log keyword that means "this stage is active/done"
+const STAGE_KEY = {
+  req: "requirement-analyzer",
+  tcg: "test-case-generator",
+  auto: "automation-generator",
+  exec: "execution-agent",
+  defect: "defect-detector",
+  report: "reporting-agent",
+};
+const ORDER = ["req", "tcg", "auto", "exec", "defect", "report"];
+
 async function runPipeline(url) {
   if (running) return;
+  if (!url) { pushConsole("fail", "Enter a target URL first."); return; }
   running = true;
 
   const stateEl = document.getElementById("runState");
@@ -239,51 +251,113 @@ async function runPipeline(url) {
   stateEl.className = "pill pill-run";
   coreMain.textContent = "Orchestrating…";
 
-  // reset agents to idle
   state.agents.forEach((a) => { a.state = "idle"; a.progress = 0; a.activity = []; a.output = "queued"; });
-  state.console = [{ t: "tag", text: "[orchestrator] pipeline started" }];
-  if (url) pushConsole("dim", `→ target: ${url}`);
+  state.console = [{ t: "tag", text: `[orchestrator] target ${url}` }];
   renderAgents();
 
-  const order = ["req", "tcg", "auto", "exec", "defect", "report"];
-  for (const id of order) {
-    const agent = state.agents.find((a) => a.id === id);
-    const script = RUN_SCRIPT[id];
-    agent.state = "running";
-    agent.activity = [];
-    agent.output = script.verb + "…";
-    pushConsole("tag", `[${id}] ${script.verb}…`);
+  // Kick off the REAL pipeline on the server.
+  let live = true;
+  try {
+    const r = await fetch(`/run?url=${encodeURIComponent(url)}`, { cache: "no-store" });
+    if (!r.ok && r.status !== 202) live = false;
+  } catch { live = false; }
 
-    // animate progress 0 -> 100 with activity lines dropped in along the way
-    for (let p = 0; p <= 100; p += 10) {
-      agent.progress = p;
-      const li = Math.floor((p / 100) * script.lines.length);
-      if (script.lines[li] && agent.activity[agent.activity.length - 1] !== script.lines[li]) {
-        agent.activity.push(script.lines[li]);
-        agent.output = script.lines[li];
-      }
-      renderAgents();
-      await sleep(120);
-    }
-
-    agent.progress = 100;
-    agent.state = "done";
-    agent.status = script.done;
-    agent.output = script.done;
-    if (!agent.activity.includes(script.lines[script.lines.length - 1])) {
-      agent.activity.push(script.lines[script.lines.length - 1]);
-    }
-    pushConsole("ok", `✓ ${id}: ${script.done}`);
-    renderAgents();
-    await sleep(260);
+  if (!live) {
+    // No server endpoint (opened via file://) — fall back to a visual simulation.
+    pushConsole("dim", "→ live runner unavailable; showing simulated progress");
+    await simulate();
+    finish(stateEl, coreMain);
+    return;
   }
 
-  pushConsole("ok", "→ execution: 6/6 passed · 100% pass rate");
+  // Poll status; advance agent cards as their stage appears in the real log.
+  let seen = 0;
+  let stageIdx = -1;
+  const activate = (i) => {
+    if (i <= stageIdx) return;
+    if (stageIdx >= 0) { const prev = state.agents.find(a => a.id === ORDER[stageIdx]); prev.state = "done"; prev.progress = 100; }
+    stageIdx = i;
+    const a = state.agents.find(x => x.id === ORDER[i]);
+    a.state = "running"; a.progress = 20;
+  };
+
+  for (;;) {
+    let st;
+    try { st = await (await fetch("/status", { cache: "no-store" })).json(); }
+    catch { break; }
+
+    // stream new log lines into the console + agent activity
+    for (; seen < st.log.length; seen++) {
+      const line = st.log[seen];
+      pushConsole(/fail|error|✕/i.test(line) ? "fail" : /✓|OK|done|complete/i.test(line) ? "ok" : "dim", line);
+      ORDER.forEach((id, i) => {
+        if (line.includes(STAGE_KEY[id])) {
+          activate(i);
+          const a = state.agents.find(x => x.id === id);
+          a.activity = (a.activity || []).concat(line.replace(/^\[[^\]]*\]\s*/, "")).slice(-4);
+          a.output = line.replace(/^.*\]\s*/, "");
+          a.progress = Math.min(95, (a.progress || 20) + 25);
+        }
+      });
+      renderAgents();
+    }
+
+    // nudge the active agent's bar so it visibly moves
+    if (stageIdx >= 0) {
+      const a = state.agents.find(x => x.id === ORDER[stageIdx]);
+      a.progress = Math.min(95, (a.progress || 20) + 4);
+      renderAgents();
+    }
+
+    if (st.status === "done" || st.status === "error") {
+      state.agents.forEach((a) => { a.state = st.status === "error" && a.id === "exec" ? "fail" : "done"; a.progress = 100; });
+      if (st.summary) applySummary(st.summary);
+      renderAgents();
+      break;
+    }
+    await sleep(500);
+  }
+
+  // reload the freshly written data.json so metrics/trace reflect the real run
+  await loadData();
+  renderAll();
+  finish(stateEl, coreMain);
+}
+
+function applySummary(s) {
+  state.metrics.pipeline[0].val = s.stories;
+  state.metrics.pipeline[1].val = s.testCases;
+  state.metrics.pipeline[2].val = s.testCases;
+  state.metrics.execution[0].val = s.executed;
+  state.metrics.execution[1].val = s.passed;
+  state.metrics.execution[2].val = s.failed;
+  state.metrics.execution[3].val = s.passRate + "%";
+  renderMetrics();
+}
+
+function finish(stateEl, coreMain) {
   pushConsole("tag", "[orchestrator] orchestration complete");
   stateEl.textContent = "COMPLETED";
   stateEl.className = "pill pill-ok";
   coreMain.textContent = "Orchestration complete";
   running = false;
+}
+
+// visual-only fallback when there's no server (file:// mode)
+async function simulate() {
+  for (const id of ORDER) {
+    const agent = state.agents.find((a) => a.id === id);
+    const script = RUN_SCRIPT[id];
+    agent.state = "running"; agent.activity = []; agent.output = script.verb + "…";
+    for (let p = 0; p <= 100; p += 20) {
+      agent.progress = p;
+      const li = Math.floor((p / 100) * script.lines.length);
+      if (script.lines[li]) { agent.activity = agent.activity.concat(script.lines[li]).slice(-4); agent.output = script.lines[li]; }
+      renderAgents(); await sleep(90);
+    }
+    agent.state = "done"; agent.progress = 100; agent.status = script.done;
+    pushConsole("ok", `✓ ${id}: ${script.done}`); renderAgents(); await sleep(150);
+  }
 }
 
 // ---------- AGENT DETAIL DRAWER ----------

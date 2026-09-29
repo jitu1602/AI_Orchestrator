@@ -22,6 +22,7 @@
       <input id="testInput" type="text" placeholder="Describe what to test, then press Enter…" />
       <button class="icon-btn" title="Options">⚙</button>
       <button class="run-btn" id="runBtn">✦ Run</button>
+      <a class="ghost-btn" id="reportLink" href="/report" target="_blank" rel="noopener" title="Open the latest consolidated report">📄 Report</a>
     </div>
 
     <div class="topbar-right">
@@ -64,7 +65,37 @@
       <svg class="links" id="linksSvg" preserveAspectRatio="none"></svg>
       <div class="core" id="core">
         <div class="core-ring"></div>
-        <div class="core-bug">🐞</div>
+        <div class="core-bot" aria-label="Orchestrator">
+          <svg viewBox="0 0 100 100" width="52" height="52" fill="none"
+               stroke="currentColor" stroke-width="4"
+               stroke-linecap="round" stroke-linejoin="round">
+            <!-- circular process arrows -->
+            <path d="M22 30 A34 34 0 0 1 74 22" stroke-dasharray="0.1 8" opacity="0.85"/>
+            <path d="M70 18 L74 22 L70 26"/>
+            <path d="M78 70 A34 34 0 0 1 26 78" stroke-dasharray="0.1 8" opacity="0.85"/>
+            <path d="M30 82 L26 78 L30 74"/>
+            <!-- gear -->
+            <g transform="translate(50 50)">
+              <circle r="24"/>
+              <g stroke-width="5">
+                <line x1="0" y1="-24" x2="0" y2="-31"/>
+                <line x1="0" y1="24" x2="0" y2="31"/>
+                <line x1="-24" y1="0" x2="-31" y2="0"/>
+                <line x1="24" y1="0" x2="31" y2="0"/>
+                <line x1="-17" y1="-17" x2="-22" y2="-22"/>
+                <line x1="17" y1="-17" x2="22" y2="-22"/>
+                <line x1="-17" y1="17" x2="-22" y2="22"/>
+                <line x1="17" y1="17" x2="22" y2="22"/>
+              </g>
+            </g>
+            <!-- robot face inside the gear -->
+            <rect x="38" y="40" width="24" height="18" rx="5"/>
+            <circle cx="45" cy="49" r="2.4" fill="currentColor" stroke="none"/>
+            <circle cx="55" cy="49" r="2.4" fill="currentColor" stroke="none"/>
+            <line x1="50" y1="40" x2="50" y2="35"/>
+            <circle cx="50" cy="33" r="2.4" fill="currentColor" stroke="none"/>
+          </svg>
+        </div>
       </div>
       <div class="core-label">
         <div class="core-label-title">◆ ORCHESTRATOR CORE</div>
